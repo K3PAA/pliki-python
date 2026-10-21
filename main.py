@@ -18,10 +18,13 @@ def main():
     parser.add_argument('--dni', nargs='+', required=True, help="Po tej opcji wpisujemy skróty dni tygodnia które nas interesują. Np. pn, pn-śr(wybór przedziału)")
     parser.add_argument('--pora', nargs='*', default=['r'], help="Pora dnia: r (rano) / w (wieczór) dla każdego dnia z osobna. Domyślnie r(rano) dla każdego z wybranych dni.")
 
-  
     args = parser.parse_args()
     if not args.csv and not args.json:
         parser.error("Musisz wybrać przynajmniej jeden format pliku: -c/--csv lub -j/--json.")
+    
+    if len(args.msc) != len(args.dni):
+        parser.error("Liczba podanych przez ciebie miesięcy musi być równa liczbie podanych dni!")
+    
     print(args.tworz, args.odczyt, args.csv, args.json, args.msc, args.dni, args.pora)
 
 
