@@ -65,10 +65,6 @@ def parse_arguments():
     
     if len(args.msc) != len(args.dni):
         parser.error("Liczba podanych przez ciebie miesięcy musi być równa liczbie podanych dni!")
-    
-    print(args.tworz, args.odczyt, args.csv, args.json, args.msc, args.dni, args.pora)
-
-    # Better argument validation to be implemented
 
     return args
 
