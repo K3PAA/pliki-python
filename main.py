@@ -21,7 +21,7 @@ def parse_time(time):
     if time == 'r':
         return 'rano'
     else:
-        return 'wieczo'
+        return 'wieczorem'
 
 # Requires months and days to be of the same length
 def generate_paths(months, days, times):
