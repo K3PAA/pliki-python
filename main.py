@@ -1,4 +1,7 @@
 import argparse
+import csv
+import random
+from pathlib import Path
 
 # Requires day_range to be a string in the format "dd-dd" or "dd"
 def parse_day_range(day_range):
@@ -26,7 +29,7 @@ def parse_time(time):
 # Requires months and days to be of the same length
 def generate_paths(months, days, times):
     paths = []
-    time_index = 0;
+    time_index = 0
     for i in range(len(months)):
         month = months[i]
         for day in parse_day_range(days[i]):
@@ -68,9 +71,55 @@ def parse_arguments():
 
     return args
 
+def write_csv(dir_path):
+    directory = Path(dir_path)
+    directory.mkdir(parents=True, exist_ok=True)
+    file_path = directory / "Dane.csv"
+
+    model = random.choice(['A', 'B', 'C'])
+    score = random.randint(0, 1000)
+    time_val = f"{random.randint(0, 1000)}s"
+
+    with open(file_path, 'w', newline='', encoding='utf-8') as file:
+        writer = csv.writer(file, delimiter=';')
+        writer.writerow(['Model', ' Wynik', ' Czas', ''])
+        writer.writerow([f"{model} ", f" {score} ", f" {time_val}", ''])
+
+
+def read_csv(dir_path):
+    file_path = Path(dir_path) / "Dane.csv"
+
+    if not file_path.exists():
+        print(f"Brak pliku: {file_path}")
+        return 0
+
+    with open(file_path, 'r', encoding='utf-8') as file:
+        reader = csv.reader(file, delimiter=';')
+        rows = list(reader)
+
+        if len(rows) >= 2:
+            second_row = rows[1]
+            model = second_row[0].strip()
+            time_str = second_row[2].strip()
+
+            if model == 'A':
+                return int(time_str.replace('s', ''))
+
+    return 0
+
 def main():
     args = parse_arguments()
-    # Main logic to be implemented
+    paths = generate_paths(args.msc, args.dni, args.pora)
 
+    if args.csv:
+        if args.tworz:
+            for path in paths:
+                write_csv(path)
+            print("Utworzono pliki Dane.csv we wskazanych ścieżkach.")
+        elif args.odczyt:
+            total_time = 0
+            for path in paths:
+                total_time += read_csv(path)
+            print(f"Suma czasu dla modelu A: {total_time}s")
 
 main()
