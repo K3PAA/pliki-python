@@ -131,7 +131,7 @@ def read_json(dir_path):
     with open(file_path, 'r', encoding='utf-8') as file:
         data = json.load(file)
 
-        if data["Model"] == 'A':
+        if data.get('Model') == 'A':
             return int(data["Czas"].replace('s', ''))
 
         return 0
