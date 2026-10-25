@@ -1,5 +1,6 @@
 import argparse
 import csv
+import json
 import random
 from pathlib import Path
 
@@ -85,7 +86,6 @@ def write_csv(dir_path):
         writer.writerow(['Model', ' Wynik', ' Czas', ''])
         writer.writerow([f"{model} ", f" {score} ", f" {time_val}", ''])
 
-
 def read_csv(dir_path):
     file_path = Path(dir_path) / "Dane.csv"
 
@@ -107,10 +107,39 @@ def read_csv(dir_path):
 
     return 0
 
+def write_json(dir_path):  
+    directory = Path(dir_path)
+    directory.mkdir(parents=True, exist_ok=True)
+    file_path = directory / "Dane.json"
+
+    model = random.choice(['A', 'B', 'C'])
+    score = random.randint(0, 1000)
+    time_val = f"{random.randint(0, 1000)}s"
+
+    data = {"Model": model, "Wynik": score, "Czas": time_val}
+
+    with open(file_path, 'w', encoding='utf-8') as file:
+        json.dump(data, file, indent=4)
+
+def read_json(dir_path):
+    file_path = Path(dir_path) / "Dane.json"
+
+    if not file_path.exists():
+        print(f"Brak pliku: {file_path}")
+        return 0
+
+    with open(file_path, 'r', encoding='utf-8') as file:
+        data = json.load(file)
+
+        if data["Model"] == 'A':
+            return int(data["Czas"].replace('s', ''))
+
+        return 0
+
 def main():
     args = parse_arguments()
     paths = generate_paths(args.msc, args.dni, args.pora)
-
+    
     if args.csv:
         if args.tworz:
             for path in paths:
@@ -121,5 +150,16 @@ def main():
             for path in paths:
                 total_time += read_csv(path)
             print(f"Suma czasu dla modelu A: {total_time}s")
+
+    if args.json:
+        if args.tworz:
+            for path in paths:
+                write_json(path)
+            print("Utworzono pliki Dane.json we wskazanych ścieżkach.")
+        elif args.odczyt:
+            total_time = 0
+            for path in paths:
+                total_time += read_json(path)
+            print(f"Suma czasu dla modelu A (JSON): {total_time}s")
 
 main()
