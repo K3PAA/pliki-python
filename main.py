@@ -1,8 +1,24 @@
 import argparse
 import csv
 import json
+import os
 import random
 from pathlib import Path
+
+def is_day_range_valid(day_range):
+    valid_days = ['pn', 'wt', 'śr', 'cz', 'pt', 'sb', 'nd']
+
+    if '-' in day_range:
+        start, end = day_range.split('-')
+        if start not in valid_days or end not in valid_days:
+            return False
+    elif day_range not in valid_days:
+        return False
+
+    return True
+
+def is_time_valid(time):
+    return time == 'r' or time == 'w'
 
 # Requires day_range to be a string in the format "dd-dd" or "dd"
 def parse_day_range(day_range):
@@ -20,7 +36,7 @@ def parse_day_range(day_range):
 
     return days
 
-# Requires time to be a string in the format "r" or "w"
+# Requires time to be a string "r" or "w"
 def parse_time(time):
     if time == 'r':
         return 'rano'
@@ -39,7 +55,7 @@ def generate_paths(months, days, times):
             else:
                 time = parse_time(times[time_index])
 
-            path = month + "/" + day + "/" + time
+            path = os.path.join(os.getcwd(), month, day, time)
             paths.append(path)
             time_index += 1
 
@@ -60,15 +76,23 @@ def parse_arguments():
     parser.add_argument('-j', '--json', action='store_true', help="Używamy tej opcji gdy korzystamy z formatu JSON.")
 
     parser.add_argument('--msc', nargs='+', required=True, help="Po tej opcji wpisujemy nazwy miesięcy które nas interesują. Np. styczeń, luty")
-    parser.add_argument('--dni', nargs='+', required=True, help="Po tej opcji wpisujemy skróty dni tygodnia które nas interesują. Np. pn, pn-śr(wybór przedziału)")
-    parser.add_argument('--pora', nargs='*', default=['r'], help="Pora dnia: r (rano) / w (wieczór) dla każdego dnia z osobna. Domyślnie r(rano) dla każdego z wybranych dni.")
+    parser.add_argument('--dni', nargs='+', required=True, help="Po tej opcji wpisujemy skróty dni tygodnia które nas interesują. Np. pn, pn-śr (wybór przedziału)")
+    parser.add_argument('--pora', nargs='*', default=['r'], help="Pora dnia: r (rano) / w (wieczór) dla każdego dnia z osobna. Domyślnie r (rano) dla każdego z wybranych dni.")
 
     args = parser.parse_args()
     if not args.csv and not args.json:
         parser.error("Musisz wybrać przynajmniej jeden format pliku: -c/--csv lub -j/--json.")
-    
+
+    for day_range in args.dni:
+        if not is_day_range_valid(day_range):
+            parser.error(f"Niepoprawny zakres dni: {day_range}. Poprawne skróty to: pn, wt, śr, cz, pt, sb, nd lub zakres np. pn-śr.")
+
+    for time in args.pora:
+        if not is_time_valid(time):
+            parser.error(f"Niepoprawna pora dnia: {time}. Poprawne wartości to: r (rano) lub w (wieczór).")
+
     if len(args.msc) != len(args.dni):
-        parser.error("Liczba podanych przez ciebie miesięcy musi być równa liczbie podanych dni!")
+            parser.error("Liczba podanych przez ciebie miesięcy musi być równa liczbie podanych dni!")
 
     return args
 
@@ -107,7 +131,7 @@ def read_csv(dir_path):
 
     return 0
 
-def write_json(dir_path):  
+def write_json(dir_path):
     directory = Path(dir_path)
     directory.mkdir(parents=True, exist_ok=True)
     file_path = directory / "Dane.json"
@@ -139,7 +163,7 @@ def read_json(dir_path):
 def main():
     args = parse_arguments()
     paths = generate_paths(args.msc, args.dni, args.pora)
-    
+
     if args.csv:
         if args.tworz:
             for path in paths:
@@ -149,7 +173,7 @@ def main():
             total_time = 0
             for path in paths:
                 total_time += read_csv(path)
-            print(f"Suma czasu dla modelu A: {total_time}s")
+            print(f"Suma czasu dla modelu A (CSV): {total_time}s")
 
     if args.json:
         if args.tworz:
