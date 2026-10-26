@@ -6,19 +6,19 @@ import random
 from pathlib import Path
 
 def is_day_range_valid(day_range):
-    valid_days = ['pn', 'wt', 'śr', 'cz', 'pt', 'sb', 'nd']
+    valid_days = {'pn': 0, 'wt': 1, 'śr': 2, 'cz': 3, 'pt': 4, 'sb': 5, 'nd': 6}
+
+    if day_range.count('-') > 1:
+        return False
 
     if '-' in day_range:
         start, end = day_range.split('-')
-        if start not in valid_days or end not in valid_days:
+        if start not in valid_days or end not in valid_days or valid_days[start] > valid_days[end]:
             return False
     elif day_range not in valid_days:
         return False
 
     return True
-
-def is_time_valid(time):
-    return time == 'r' or time == 'w'
 
 # Requires day_range to be a string in the format "dd-dd" or "dd"
 def parse_day_range(day_range):
@@ -56,7 +56,7 @@ def generate_paths(months, days, times):
                 time = parse_time(times[time_index])
 
             path = os.path.join(os.getcwd(), month, day, time)
-            paths.append(path)
+            paths.append(Path(path))
             time_index += 1
 
     return paths
@@ -77,7 +77,7 @@ def parse_arguments():
 
     parser.add_argument('--msc', nargs='+', required=True, help="Po tej opcji wpisujemy nazwy miesięcy które nas interesują. Np. styczeń, luty")
     parser.add_argument('--dni', nargs='+', required=True, help="Po tej opcji wpisujemy skróty dni tygodnia które nas interesują. Np. pn, pn-śr (wybór przedziału)")
-    parser.add_argument('--pora', nargs='*', default=['r'], help="Pora dnia: r (rano) / w (wieczór) dla każdego dnia z osobna. Domyślnie r (rano) dla każdego z wybranych dni.")
+    parser.add_argument('--pora', nargs='*', default=['r'], choices=['r', 'w'], help="Pora dnia: r (rano) / w (wieczór) dla każdego dnia z osobna. Domyślnie r (rano) dla każdego z wybranych dni.")
 
     args = parser.parse_args()
     if not args.csv and not args.json:
@@ -87,23 +87,22 @@ def parse_arguments():
         if not is_day_range_valid(day_range):
             parser.error(f"Niepoprawny zakres dni: {day_range}. Poprawne skróty to: pn, wt, śr, cz, pt, sb, nd lub zakres np. pn-śr.")
 
-    for time in args.pora:
-        if not is_time_valid(time):
-            parser.error(f"Niepoprawna pora dnia: {time}. Poprawne wartości to: r (rano) lub w (wieczór).")
-
     if len(args.msc) != len(args.dni):
             parser.error("Liczba podanych przez ciebie miesięcy musi być równa liczbie podanych dni!")
 
     return args
 
-def write_csv(dir_path):
-    directory = Path(dir_path)
-    directory.mkdir(parents=True, exist_ok=True)
-    file_path = directory / "Dane.csv"
-
+def generate_random_data():
     model = random.choice(['A', 'B', 'C'])
     score = random.randint(0, 1000)
     time_val = f"{random.randint(0, 1000)}s"
+    return model, score, time_val
+
+def write_csv(dir_path):
+    dir_path.mkdir(parents=True, exist_ok=True)
+    file_path = dir_path / "Dane.csv"
+
+    model, score, time_val = generate_random_data()
 
     with open(file_path, 'w', newline='', encoding='utf-8') as file:
         writer = csv.writer(file, delimiter=';')
@@ -111,7 +110,7 @@ def write_csv(dir_path):
         writer.writerow([f"{model} ", f" {score} ", f" {time_val}", ''])
 
 def read_csv(dir_path):
-    file_path = Path(dir_path) / "Dane.csv"
+    file_path = dir_path / "Dane.csv"
 
     if not file_path.exists():
         print(f"Brak pliku: {file_path}")
@@ -121,7 +120,7 @@ def read_csv(dir_path):
         reader = csv.reader(file, delimiter=';')
         rows = list(reader)
 
-        if len(rows) >= 2:
+        if len(rows) >= 2 and len(rows[1]) >= 3:
             second_row = rows[1]
             model = second_row[0].strip()
             time_str = second_row[2].strip()
@@ -132,13 +131,10 @@ def read_csv(dir_path):
     return 0
 
 def write_json(dir_path):
-    directory = Path(dir_path)
-    directory.mkdir(parents=True, exist_ok=True)
-    file_path = directory / "Dane.json"
+    dir_path.mkdir(parents=True, exist_ok=True)
+    file_path = dir_path / "Dane.json"
 
-    model = random.choice(['A', 'B', 'C'])
-    score = random.randint(0, 1000)
-    time_val = f"{random.randint(0, 1000)}s"
+    model, score, time_val = generate_random_data()
 
     data = {"Model": model, "Wynik": score, "Czas": time_val}
 
@@ -146,7 +142,7 @@ def write_json(dir_path):
         json.dump(data, file, indent=4)
 
 def read_json(dir_path):
-    file_path = Path(dir_path) / "Dane.json"
+    file_path = dir_path / "Dane.json"
 
     if not file_path.exists():
         print(f"Brak pliku: {file_path}")
@@ -156,7 +152,7 @@ def read_json(dir_path):
         data = json.load(file)
 
         if data.get('Model') == 'A':
-            return int(data["Czas"].replace('s', ''))
+            return int(data.get('Czas', '0').replace('s', ''))
 
         return 0
 
@@ -186,4 +182,5 @@ def main():
                 total_time += read_json(path)
             print(f"Suma czasu dla modelu A (JSON): {total_time}s")
 
-main()
+if __name__ == "__main__":
+    main()
